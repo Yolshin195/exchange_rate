@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Живой график</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Bybit p2p</h1>
+    <canvas id="chartCanvas"></canvas>
+
+    <script>
+        const initialData = {
+           minPoints: {{ min_points | tojson }},
+           maxPoints: {{ max_points | tojson }},
+           averagePoints: {{ average_points | tojson }}
+       };
+
+        console.log(initialData);
+
+        const ctx = document.getElementById("chartCanvas").getContext("2d");
+        const MAX_POINTS = 100;  // Ограничиваем график последними 100 точками
+
+        const chart = new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: Array.from({ length: initialData.minPoints.length }, (_, i) => i),
+                datasets: [
+                    {
+                        label: "Min",
+                        data: initialData.minPoints,
+                        borderColor: "blue",
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: "Max",
+                        data: initialData.maxPoints,
+                        borderColor: "red",
+                        borderWidth: 2,
+                        fill: false
+                    },
+                    {
+                        label: "Avg",
+                        data: initialData.averagePoints,
+                        borderColor: "green",
+                        borderWidth: 2,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: "Время (секунды)" } },
+                    y: { title: { display: true, text: "Значение" } }
+                }
+            }
+        });
+
+        let index = initialData.minPoints.length;
+
+        const socket = new WebSocket("ws://" + window.location.host + "/ping");
+
+        socket.onmessage = function(event) {
+            let data = JSON.parse(event.data);
+           console.log(data);
+
+           chart.data.labels.push(index++);
+           // Добавляем новую точку на график
+            chart.data.datasets[0].data.push(data.min);
+            chart.data.datasets[1].data.push(data.max);
+            chart.data.datasets[2].data.push(data.average);
+
+            // Удаляем старые точки, если больше MAX_POINTS
+            if (chart.data.labels.length > MAX_POINTS) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+                chart.data.datasets[2].data.shift();
+            }
+
+           chart.update();
+        };
+
+        socket.onclose = function() {
+            console.log("Соединение закрыто");
+        };
+    </script>
+</body>
+</html>

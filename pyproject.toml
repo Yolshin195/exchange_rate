@@ -1,0 +1,16 @@
+[project]
+name = "exchange-rate"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "advanced-alchemy[cli]>=0.32.2",
+    "aiosqlite>=0.21.0",
+    "arq>=0.26.3",
+    "asyncpg>=0.30.0",
+    "litestar[jinja,standard]>=2.15.1",
+    "playwright>=1.50.0",
+    "pydantic>=2.10.6",
+    "pydantic-settings>=2.8.1",
+    "sqlalchemy>=2.0.38",
+]

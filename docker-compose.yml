@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    restart: always
+  pgdb:
+    container_name: pgdb
+    hostname: pgdb
+    image: postgres:13-alpine3.18
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_USER: root
+      POSTGRES_DB: db
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+  arq-worker:
+    container_name: arq-worker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    entrypoint: arq
+    command: src.tasks.arq_settings.WorkerSettings
+    depends_on:
+      - redis
+      - pgdb
+
+volumes:
+  pg_data:
