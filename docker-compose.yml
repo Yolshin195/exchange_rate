@@ -4,6 +4,7 @@ services:
   redis:
     image: redis:latest
     container_name: redis_container
+    hostname: redis
     ports:
       - "6379:6379"
     restart: always
@@ -24,10 +25,28 @@ services:
     container_name: arq-worker
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: arq.Dockerfile
     working_dir: /app
     entrypoint: arq
     command: src.tasks.arq_settings.WorkerSettings
+    environment:
+      - ENVIRONMENT=docker
+    depends_on:
+      - redis
+      - pgdb
+  litestar-app:
+    container_name: litestar-app-container
+    build:
+      context: .
+      dockerfile: litestar.Dockerfile
+    working_dir: /app
+    command: ["litestar", "--app", "src.app:app", "run", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      - ENVIRONMENT=docker
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
     depends_on:
       - redis
       - pgdb

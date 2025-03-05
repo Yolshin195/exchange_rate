@@ -13,4 +13,4 @@ RUN uv sync --frozen --no-cache
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN playwright install chrome --with-deps
+EXPOSE 8000
