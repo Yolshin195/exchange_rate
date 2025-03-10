@@ -7,11 +7,13 @@ services:
     hostname: redis
     ports:
       - "6379:6379"
+    networks:
+      - app_network
     restart: always
   pgdb:
     container_name: pgdb
     hostname: pgdb
-    image: postgres:13-alpine3.18
+    image: postgres:17.4-alpine
     restart: always
     environment:
       POSTGRES_PASSWORD: pass
@@ -19,6 +21,8 @@ services:
       POSTGRES_DB: db
     volumes:
       - pg_data:/var/lib/postgresql/data
+    networks:
+      - app_network
     ports:
       - "5434:5432"
   arq-worker:
@@ -31,6 +35,10 @@ services:
     command: src.tasks.arq_settings.WorkerSettings
     environment:
       - ENVIRONMENT=docker
+    volumes:
+      - ./src:/app/src
+    networks:
+      - app_network
     depends_on:
       - redis
       - pgdb
@@ -38,11 +46,15 @@ services:
     container_name: litestar-app-container
     build:
       context: .
-      dockerfile: litestar.Dockerfile
+      dockerfile: Dockerfile
     working_dir: /app
     command: ["litestar", "--app", "src.app:app", "run", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       - ENVIRONMENT=docker
+    volumes:
+      - ./src:/app/src
+    networks:
+      - app_network
     expose:
       - 8000
     ports:
@@ -50,6 +62,22 @@ services:
     depends_on:
       - redis
       - pgdb
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.50.0-noble
+    container_name: playwright
+    working_dir: /home/pwuser
+    user: pwuser
+    environment:
+      - DEBUG=pw:*,playwright:*  # Расширенное логирование
+      - PWDEBUG=1  # Включает расширенный режим отладки
+    ports:
+      - "3000:3000"
+    command: /bin/sh -c "npx -y playwright@1.50.0 run-server --port 3000 --host 0.0.0.0"
+    networks:
+      - app_network
 
 volumes:
   pg_data:
+
+networks:
+  app_network:

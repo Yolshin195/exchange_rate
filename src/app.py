@@ -1,5 +1,4 @@
 import asyncio
-import time
 from pathlib import Path
 from typing import AsyncGenerator, Any
 
@@ -17,10 +16,13 @@ from litestar.plugins.sqlalchemy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.repositories import PeriodRepositoryService
-from src.settings import settings
+from src.settings import settings, EnvironmentEnum
 
 RESOURCE_LOCK = asyncio.Lock()
 
+print(settings)
+print(settings.environment == "docker")
+print(settings.postgres.connection_string)
 session_config = AsyncSessionConfig(expire_on_commit=False)
 sqlalchemy_config = SQLAlchemyAsyncConfig(
     connection_string=settings.postgres.connection_string,
@@ -32,6 +34,13 @@ alchemy = SQLAlchemyPlugin(config=sqlalchemy_config)
 
 async def provider_period_service(db_session: AsyncSession):
     return PeriodRepositoryService(session=db_session)
+
+
+@get(
+    path='/config'
+)
+async def get_config() -> dict[str, Any]:
+    return settings.dict()
 
 
 @get(
@@ -68,10 +77,11 @@ async def ping(
 
 
 app = Litestar(
-    [hello_world, ping],
-    plugins=[alchemy],
+    [hello_world, ping, get_config],
+    plugins=[SQLAlchemyPlugin(config=sqlalchemy_config)],
     template_config=TemplateConfig(
         directory=Path("templates"),
         engine=JinjaTemplateEngine,
     ),
+    pdb_on_exception=True
 )

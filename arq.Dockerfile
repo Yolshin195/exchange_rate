@@ -9,8 +9,7 @@ ADD . /app
 # Sync the project into a new environment, using the frozen lockfile
 WORKDIR /app
 
-RUN uv sync --frozen --no-cache
+RUN uv sync --frozen --no-cache --group playwright
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-RUN playwright install chromium --with-deps

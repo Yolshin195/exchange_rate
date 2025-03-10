@@ -37,18 +37,21 @@ class Settings(BaseSettings):
     bybit: ByBit
 
     environment: str = os.getenv("ENVIRONMENT", EnvironmentEnum.local.value)
+    env_file_testing: list[str] = (['.env.docker']
+            if environment == EnvironmentEnum.docker.value
+            else ['.env', '../.env']
+    )
     model_config = SettingsConfigDict(
         env_nested_delimiter='__',
-        env_file=(
-            ['.env.docker']
-            if environment == EnvironmentEnum.docker
-            else ['.env', '../.env']
-        )
+        env_file=('.env.docker' if environment == EnvironmentEnum.docker.value else ['.env', '../.env'])
     )
-
 
 settings = Settings()
 
+environment: str = os.getenv("ENVIRONMENT", EnvironmentEnum.local.value)
+print(environment, environment == EnvironmentEnum.docker.value)
+
+print(f'{settings.model_config}')
 
 if __name__ == "__main__":
     print(settings)
